@@ -1,0 +1,101 @@
+﻿@page "/"
+
+@using Syncfusion.Blazor.Grids
+
+<SfTreeGrid @ref="grid" DataSource="@TreeData" AllowPaging="true" TValue="SelfReferenceData" AllowSelection="true" IdMapping="TaskID" ParentIdMapping="ParentID" TreeColumnIndex="1">
+    <TreeGridPageSettings PageSize="2"></TreeGridPageSettings>
+    <TreeGridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"></TreeGridSelectionSettings>
+
+    <TreeGridTemplates>
+        <DetailTemplate>
+            <div style="padding-left:@((context as SelfReferenceData).TreeLevel*18+164)px">
+
+                <SfGrid DataSource="@Orders">
+                    <GridColumns>
+                        <GridColumn Field=@nameof(Order.OrderID) IsPrimaryKey=true HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                        <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                        <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                        <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                    </GridColumns>
+                </SfGrid>
+
+            </div>
+        </DetailTemplate>
+    </TreeGridTemplates>
+    <TreeGridColumns>
+        <TreeGridColumn Field="TaskID" HeaderText="Task ID" IsPrimaryKey="true" Width="80" TextAlign="TextAlign.Right"></TreeGridColumn>
+        <TreeGridColumn Field="TaskName" HeaderText="Task Name" Width="145"></TreeGridColumn>
+        <TreeGridColumn Field="Duration" HeaderText="Duration" Width="100" TextAlign="TextAlign.Right"></TreeGridColumn>
+        <TreeGridColumn Field="Progress" HeaderText="Progress" Width="100"></TreeGridColumn>
+        <TreeGridColumn Field="Priority" HeaderText="Priority" Width="100"></TreeGridColumn>
+    </TreeGridColumns>
+</SfTreeGrid>
+
+@code {
+    public SfTreeGrid<SelfReferenceData> grid;
+    public List<SelfReferenceData> TreeData { get; set; }
+    public List<Order> Orders { get; set; }
+
+    protected override void OnInitialized()
+    {
+        this.TreeData = SelfReferenceData.GetTree().ToList();
+        Orders = Enumerable.Range(1, 5).Select(x => new Order()
+            {
+                OrderID = 1000 + x,
+                CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+                Freight = 2.1 * x,
+                OrderDate = DateTime.Now.AddDays(-x),
+            }).ToList();
+    }
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+    public class SelfReferenceData
+    {
+        public static List<SelfReferenceData> tree = new List<SelfReferenceData>();
+        public int? TaskID { get; set; }
+        public string TaskName { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public String Progress { get; set; }
+        public String Priority { get; set; }
+        public int Duration { get; set; }
+        public int? ParentID { get; set; }
+        public int? TreeLevel { get; set; }
+
+        public SelfReferenceData() { }
+        public static List<SelfReferenceData> GetTree()
+        {
+            tree.Clear();
+            if (tree.Count == 0)
+            {
+                int IDCount = 0;
+                for (var t = 1; t <= 15; t++)
+                {
+                    Random ran = new Random();
+                    string math = (ran.Next() % 3) == 0 ? "High" : (ran.Next() % 2) == 0 ? "Release Breaker" : "Critical";
+                    string progr = (ran.Next() % 3) == 0 ? "Started" : (ran.Next() % 2) == 0 ? "Open" : "In Progress";
+
+                    tree.Add(new SelfReferenceData() { TaskID = t, TaskName = "Parent Task " + t.ToString(), StartDate = new DateTime(1992, 06, 07), EndDate = new DateTime(1994, 08, 25), Progress = progr, Priority = math, Duration = ran.Next(1, 50), TreeLevel = 0 });
+                int parent = tree.Count;
+                    for (var c = 0; c < 2; c++)
+                    {
+                        string val = ((parent + c + 1) % 3 == 0) ? "Low" : "Critical";
+                        progr = (ran.Next() % 3) == 0 ? "In Progress" : (ran.Next() % 2) == 0 ? "Open" : "Validated";
+                    tree.Add(new SelfReferenceData() { TaskID = 15 + t + c + IDCount, TaskName = "Child Task " + (15 + t + c + IDCount).ToString(), StartDate = new DateTime(1992, 06, 07), EndDate = new DateTime(1994, 08, 25), ParentID = t, Progress = progr, Priority = val, Duration = ran.Next(1, 50), TreeLevel = 1 });
+
+                    }
+
+                    IDCount++;
+                }
+            }
+            return tree;
+
+        }
+
+    }
+}
